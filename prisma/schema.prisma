@@ -1,0 +1,172 @@
+// Prisma Schema cho hệ thống quản lý hình ảnh y tế
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// Bảng dữ liệu kết quả chẩn đoán hình ảnh - Quan trọng nhất cho ảnh X-quang
+model CN_ImagingResultData {
+  id               Int      @id @default(autoincrement())
+  resultId         Int?     // Liên kết với kết quả chẩn đoán
+  resultData       Bytes?   // Dữ liệu ảnh kết quả (varbinary)
+  conclusionData   Bytes?   // Dữ liệu ảnh kết luận (varbinary)
+  suggestionData   Bytes?   // Dữ liệu ảnh đề nghị (varbinary)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdBy        String?  @db.VarChar(50)
+  updatedBy        String?  @db.VarChar(50)
+
+  @@map("CN_ImagingResultData")
+}
+
+// Bảng kết quả chẩn đoán hình ảnh
+model CN_ImagingResult {
+  id             Int      @id @default(autoincrement())
+  patientId      String?  @db.VarChar(20)
+  fileName       String?  @db.VarChar(255)
+  templateFile   String?  @db.NVarChar(255)
+  pathologyType  Int?     @db.TinyInt // 1: X-quang, 2: CT, 3: MRI, 4: Siêu âm
+  examDate       DateTime?
+  resultContent  String?  @db.NText
+  doctorId       String?  @db.VarChar(20)
+  status         Int?     @db.TinyInt @default(1) // 1: Đang xử lý, 2: Hoàn thành
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("CN_ImagingResult")
+}
+
+// Bảng lưu trữ hình ảnh, đồ thị liên quan bệnh nhân
+model CN_Graphic {
+  id           Int      @id @default(autoincrement())
+  patientId    String?  @db.VarChar(20)
+  fileName     String?  @db.VarChar(255)
+  graphicType  String?  @db.VarChar(50) // Loại hình ảnh/đồ thị
+  description  String?  @db.NVarChar(500)
+  filePath     String?  @db.VarChar(500)
+  fileSize     Int?
+  mimeType     String?  @db.VarChar(100)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdBy    String?  @db.VarChar(50)
+
+  @@map("CN_Graphic")
+}
+
+// Bảng lưu trữ hình ảnh xét nghiệm
+model CN_PathologyImage {
+  id          Int      @id @default(autoincrement())
+  resultId    Int?     // Liên kết với kết quả xét nghiệm
+  filename    String?  @db.VarChar(255)
+  imagePath   String?  @db.VarChar(500)
+  imageType   String?  @db.VarChar(50) // vi sinh, tế bào, mô bệnh học
+  description String?  @db.NVarChar(500)
+  fileSize    Int?
+  mimeType    String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("CN_PathologyImage")
+}
+
+// Bảng lưu trữ file tài liệu bệnh án
+model CN_FILES {
+  id          Int      @id @default(autoincrement())
+  patientId   String?  @db.VarChar(20)
+  fileName    String?  @db.VarChar(255)
+  fileType    Int?     @db.TinyInt // 1: Ảnh, 2: PDF, 3: Document
+  docType     String?  @db.NVarChar(100) // Loại tài liệu
+  filePath    String?  @db.VarChar(500)
+  fileSize    Int?
+  mimeType    String?  @db.VarChar(100)
+  description String?  @db.NVarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  uploadedBy  String?  @db.VarChar(50)
+
+  @@map("CN_FILES")
+}
+
+// Bảng dữ liệu file tiến trình điều trị
+model CN_ProgressData {
+  id          Int      @id @default(autoincrement())
+  patientId   String?  @db.VarChar(20)
+  visitId     Int?     // Liên kết với lần khám
+  data        Bytes?   // Dữ liệu file (varbinary)
+  dataType    String?  @db.VarChar(50)
+  description String?  @db.NVarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?  @db.VarChar(50)
+
+  @@map("CN_ProgressData")
+}
+
+// Bảng file lâm sàng mở rộng
+model EXP_ClinicalFile {
+  id          Int      @id @default(autoincrement())
+  patientId   String?  @db.VarChar(20)
+  fileName    String?  @db.VarChar(255)
+  type        Int?     @db.TinyInt // Loại file
+  filePath    String?  @db.VarChar(500)
+  fileSize    Int?
+  category    String?  @db.VarChar(100) // Phân loại file lâm sàng
+  description String?  @db.NVarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  uploadedBy  String?  @db.VarChar(50)
+
+  @@map("EXP_ClinicalFile")
+}
+
+// Bảng thông tin yêu cầu PACS (Picture Archiving and Communication System)
+model PACS_RequestInfo {
+  id            Int      @id @default(autoincrement())
+  patientId     String?  @db.VarChar(20)
+  studyId       String?  @db.VarChar(100)
+  seriesId      String?  @db.VarChar(100)
+  fileResultURL String?  @db.NVarChar(500) // Đường dẫn file kết quả
+  viewURL       String?  @db.NVarChar(500) // Đường dẫn xem ảnh
+  modality      String?  @db.VarChar(10)   // CR, CT, MR, US, etc.
+  studyDate     DateTime?
+  description   String?  @db.NVarChar(500)
+  status        Int?     @db.TinyInt @default(1) // 1: Active, 2: Archived
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("PACS_RequestInfo")
+}
+
+// Bảng thông tin bệnh nhân (tham khảo)
+model Patient {
+  id          String   @id @db.VarChar(20)
+  fullName    String?  @db.NVarChar(100)
+  birthDate   DateTime?
+  gender      Int?     @db.TinyInt // 1: Nam, 2: Nữ
+  phone       String?  @db.VarChar(20)
+  address     String?  @db.NVarChar(300)
+  email       String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("Patient")
+}
+
+// Bảng thông tin bác sĩ (tham khảo)
+model Doctor {
+  id          String   @id @db.VarChar(20)
+  fullName    String?  @db.NVarChar(100)
+  speciality  String?  @db.NVarChar(100)
+  phone       String?  @db.VarChar(20)
+  email       String?  @db.VarChar(100)
+  department  String?  @db.NVarChar(100)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("Doctor")
+}

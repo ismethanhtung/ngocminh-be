@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            margin: 2px 0;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .main-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .table-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+        .search-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .data-table {
+            background: white;
+            border-radius: 0 0 15px 15px;
+            overflow: hidden;
+        }
+        .image-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .image-preview:hover {
+            transform: scale(1.1);
+        }
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .pagination-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .table-type-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        .table-type-table {
+            background: #28a745;
+            color: white;
+        }
+        .table-type-view {
+            background: #17a2b8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-0" style="height: 100vh; overflow: hidden;">
+                <div class="p-3 d-flex flex-column h-100">
+                    <h4 class="mb-4">
+                        <i class="fas fa-database me-2"></i>
+                        Database Viewer
+                    </h4>
+                    <p class="text-muted small mb-4">Ngọc Minh Medical</p>
+                    
+                    <div class="mb-3">
+                        <input type="text" class="form-control form-control-sm" id="tableSearch" 
+                               placeholder="Tìm kiếm bảng/view...">
+                    </div>
+                    
+                    <!-- CHỖ NÀY FIX -->
+                    <div class="flex-grow-1 overflow-auto">
+                        <nav class="nav flex-column" id="tableList">
+                            <% tables.forEach(function(table) { %>
+                                <a class="nav-link d-flex justify-content-between align-items-center" 
+                                   href="#" data-table="<%= table.TABLE_NAME %>">
+                                    <span>
+                                        <i class="fas fa-<%= table.TABLE_TYPE === 'VIEW' ? 'eye' : 'table' %> me-2"></i>
+                                        <%= table.TABLE_NAME %>
+                                    </span>
+                                    <span class="table-type-badge <%= table.TABLE_TYPE === 'VIEW' ? 'table-type-view' : 'table-type-table' %>">
+                                        <%= table.TABLE_TYPE %>
+                                    </span>
+                                </a>
+                            <% }); %>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content p-4">
+                <div id="welcomeMessage" class="text-center py-5">
+                    <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                    <h3 class="text-muted">Chào mừng đến với Database Viewer</h3>
+                    <p class="text-muted">Chọn một bảng hoặc view từ sidebar để xem dữ liệu</p>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Đang tải dữ liệu...</p>
+                </div>
+
+                <!-- Table Content -->
+                <div id="tableContent" style="display: none;">
+                    <!-- Table Header -->
+                    <div class="table-card">
+                        <div class="table-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h4 class="mb-0" id="currentTableName">
+                                        <i class="fas fa-table me-2"></i>
+                                        <span id="tableNameDisplay"></span>
+                                    </h4>
+                                    <p class="mb-0 mt-2 opacity-75" id="tableInfo"></p>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <button class="btn btn-light btn-sm" data-action="refresh">
+                                        <i class="fas fa-sync-alt me-1"></i> Làm mới
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search Box -->
+                        <div class="search-box">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <select class="form-select" id="searchColumn">
+                                        <option value="">Tất cả cột</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="searchTerm" 
+                                           placeholder="Nhập từ khóa tìm kiếm...">
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-primary w-100" data-action="search">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pagination Info -->
+                        <div class="pagination-info">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <span id="paginationInfo"></span>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-primary btn-sm" data-action="prev-page">
+                                            <i class="fas fa-chevron-left"></i> Trước
+                                        </button>
+                                        <span class="btn btn-outline-primary btn-sm disabled" id="currentPageDisplay"></span>
+                                        <button class="btn btn-outline-primary btn-sm" data-action="next-page">
+                                            Sau <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="data-table">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="dataTable">
+                                    <thead class="table-light">
+                                        <tr id="tableHeaders"></tr>
+                                    </thead>
+                                    <tbody id="tableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xem ảnh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" class="modal-image" src="" alt="Ảnh">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentTable = null;
+        let currentPage = 1;
+        let currentPageSize = 50;
+        let totalRows = 0;
+
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tìm kiếm bảng
+            document.getElementById('tableSearch').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const tableLinks = document.querySelectorAll('#tableList .nav-link');
+                
+                tableLinks.forEach(link => {
+                    const tableName = link.textContent.toLowerCase();
+                    if (tableName.includes(searchTerm)) {
+                        link.style.display = 'block';
+                    } else {
+                        link.style.display = 'none';
+                    }
+                });
+            });
+
+            // Xử lý click vào bảng
+            document.querySelectorAll('#tableList .nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Xóa active class
+                    document.querySelectorAll('#tableList .nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const tableName = this.dataset.table;
+                    loadTableData(tableName);
+                });
+            });
+
+            // Event delegation cho ảnh preview
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('image-preview')) {
+                    const imageUrl = e.target.getAttribute('data-image-url');
+                    if (imageUrl) {
+                        showImage(imageUrl);
+                    }
+                }
+            });
+
+            // Event delegation cho các button
+            document.addEventListener('click', function(e) {
+                if (e.target.matches('[data-action="refresh"]')) {
+                    refreshTable();
+                } else if (e.target.matches('[data-action="search"]')) {
+                    searchData();
+                } else if (e.target.matches('[data-action="prev-page"]')) {
+                    changePage(-1);
+                } else if (e.target.matches('[data-action="next-page"]')) {
+                    changePage(1);
+                }
+            });
+        });
+
+        // Tải dữ liệu bảng
+        async function loadTableData(tableName, page = 1, searchTerm = '', searchColumn = '') {
+            try {
+                showLoading(true);
+                currentTable = tableName;
+                currentPage = page;
+
+                const params = new URLSearchParams({
+                    tableName: tableName,
+                    page: page,
+                    pageSize: currentPageSize
+                });
+
+                if (searchTerm) params.append('searchTerm', searchTerm);
+                if (searchColumn) params.append('searchColumn', searchColumn);
+
+                const response = await fetch(`/database-viewer/api/table-data?${params}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayTableData(result.data);
+                } else {
+                    showError('Lỗi khi tải dữ liệu: ' + result.message);
+                }
+            } catch (error) {
+                showError('Lỗi kết nối: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Hiển thị dữ liệu bảng
+        function displayTableData(tableData) {
+            const { columns, data, totalRows: total, currentPage: page, pageSize } = tableData;
+            
+            currentPage = page;
+            totalRows = total;
+            currentPageSize = pageSize;
+
+            // Cập nhật thông tin bảng
+            document.getElementById('tableNameDisplay').textContent = currentTable;
+            document.getElementById('tableInfo').textContent = 
+                `${total} dòng dữ liệu | Trang ${page} | ${pageSize} dòng/trang`;
+
+            // Cập nhật cột tìm kiếm
+            updateSearchColumns(columns);
+
+            // Cập nhật headers
+            updateTableHeaders(columns);
+
+            // Cập nhật dữ liệu
+            updateTableBody(data, columns);
+
+            // Cập nhật phân trang
+            updatePagination();
+
+            // Hiển thị nội dung
+            document.getElementById('welcomeMessage').style.display = 'none';
+            document.getElementById('tableContent').style.display = 'block';
+        }
+
+        // Cập nhật cột tìm kiếm
+        function updateSearchColumns(columns) {
+            const searchColumnSelect = document.getElementById('searchColumn');
+            searchColumnSelect.innerHTML = '<option value="">Tất cả cột</option>';
+            
+            columns.forEach(column => {
+                const option = document.createElement('option');
+                option.value = column.COLUMN_NAME;
+                option.textContent = `${column.COLUMN_NAME} (${column.DATA_TYPE})`;
+                searchColumnSelect.appendChild(option);
+            });
+        }
+
+        // Cập nhật headers bảng
+        function updateTableHeaders(columns) {
+            const headersRow = document.getElementById('tableHeaders');
+            headersRow.innerHTML = '';
+            
+            columns.forEach(column => {
+                const th = document.createElement('th');
+                th.textContent = column.COLUMN_NAME;
+                th.className = 'text-nowrap';
+                headersRow.appendChild(th);
+            });
+        }
+
+        // Cập nhật dữ liệu bảng
+        function updateTableBody(data, columns) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="${columns.length}" class="text-center text-muted py-4">Không có dữ liệu</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                columns.forEach(column => {
+                    const td = document.createElement('td');
+                    const value = row[column.COLUMN_NAME];
+                    
+                    if (isImageColumn(column)) {
+                        td.innerHTML = createImagePreview(value, column.COLUMN_NAME, row);
+                    } else {
+                        td.textContent = formatCellValue(value);
+                    }
+                    
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Kiểm tra cột ảnh
+        function isImageColumn(column) {
+            const imageTypes = ['image', 'varbinary', 'binary', 'blob'];
+            const imageNames = ['image', 'photo', 'img', 'picture', 'scan', 'xray', 'ct', 'mri'];
+            
+            return imageTypes.some(type => 
+                column.DATA_TYPE.toLowerCase().includes(type)
+            ) || imageNames.some(name => 
+                column.COLUMN_NAME.toLowerCase().includes(name)
+            );
+        }
+
+        // Tạo preview ảnh
+        function createImagePreview(value, columnName, row) {
+            if (!value) return '<span class="text-muted">Không có ảnh</span>';
+            
+            // Tìm cột ID để xác định ảnh
+            const idColumn = Object.keys(row).find(key => 
+                key.toLowerCase().includes('id') && row[key]
+            );
+            
+            if (!idColumn) return '<span class="text-muted">Không thể hiển thị</span>';
+            
+            const imageUrl = `/database-viewer/api/image?tableName=${currentTable}&idColumn=${idColumn}&idValue=${row[idColumn]}&imageColumn=${columnName}`;
+            
+            return `<a href="${imageUrl}" target="_blank" rel="noopener noreferrer"><img src="${imageUrl}" class="image-preview" data-image-url="${imageUrl}" alt="Ảnh"></a>`;
+        }
+
+        // Hiển thị ảnh trong modal
+        function showImage(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            new bootstrap.Modal(document.getElementById('imageModal')).show();
+        }
+
+        // Format giá trị cell
+        function formatCellValue(value) {
+            if (value === null || value === undefined) return '<span class="text-muted">NULL</span>';
+            if (typeof value === 'string' && value.length > 100) {
+                return value.substring(0, 100) + '...';
+            }
+            return value;
+        }
+
+        // Cập nhật phân trang
+        function updatePagination() {
+            const totalPages = Math.ceil(totalRows / currentPageSize);
+            document.getElementById('paginationInfo').textContent = 
+                `Hiển thị ${((currentPage - 1) * currentPageSize) + 1} - ${Math.min(currentPage * currentPageSize, totalRows)} trong tổng số ${totalRows} dòng`;
+            
+            document.getElementById('currentPageDisplay').textContent = `${currentPage} / ${totalPages}`;
+        }
+
+        // Thay đổi trang
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            const totalPages = Math.ceil(totalRows / currentPageSize);
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                loadTableData(currentTable, newPage);
+            }
+        }
+
+        // Tìm kiếm dữ liệu
+        function searchData() {
+            const searchTerm = document.getElementById('searchTerm').value;
+            const searchColumn = document.getElementById('searchColumn').value;
+            
+            if (currentTable) {
+                loadTableData(currentTable, 1, searchTerm, searchColumn);
+            }
+        }
+
+        // Làm mới bảng
+        function refreshTable() {
+            if (currentTable) {
+                loadTableData(currentTable, currentPage);
+            }
+        }
+
+        // Hiển thị loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Hiển thị lỗi
+        function showError(message) {
+            alert('Lỗi: ' + message);
+        }
+    </script>
+</body>
+</html>

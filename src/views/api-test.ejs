@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css"
+    />
+    <style>
+      body {
+        max-width: 1000px;
+        margin: 24px auto;
+      }
+      code,
+      pre {
+        background: #f4f4f4;
+        padding: 8px;
+        display: block;
+        white-space: pre-wrap;
+      }
+      .row {
+        display: flex;
+        gap: 16px;
+      }
+      .row > div {
+        flex: 1;
+      }
+      .card {
+        border: 1px solid #eee;
+        padding: 16px;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>API Test</h2>
+    <p>Base: <code><%= apiBase %></code></p>
+
+    <div class="row">
+      <div class="card">
+        <h4>1) ViewHAResult theo FileNum</h4>
+        <form id="form-ha-results">
+          <label
+            >FileNum
+            <input type="text" id="fileNum" placeholder="VD: 25003245" />
+          </label>
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-ha-results"></pre>
+      </div>
+
+      <div class="card">
+        <h4>2) Clinical Items theo ID lấy từ ViewHAResult</h4>
+        <form id="form-clinical">
+          <label
+            >ResultId
+            <input type="number" id="clinicalResultId" />
+          </label>
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-clinical"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h4>3) Xét nghiệm (Pathology) theo ResultId</h4>
+        <form id="form-pathology">
+          <label
+            >ResultId
+            <input type="number" id="pathologyResultId" />
+          </label>
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-pathology"></pre>
+      </div>
+
+      <div class="card">
+        <h4>4) Chuỗi Chẩn đoán hình ảnh theo ItemNum</h4>
+        <form id="form-imaging">
+          <label
+            >ItemNum
+            <input type="number" id="itemNum" />
+          </label>
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-imaging"></pre>
+      </div>
+    </div>
+
+    <script>
+      const apiBase = '<%= apiBase %>';
+
+      function show(outId, data) {
+        document.getElementById(outId).textContent = JSON.stringify(data, null, 2);
+      }
+
+      document.getElementById('form-ha-results').addEventListener('submit', async e => {
+        e.preventDefault();
+        const fileNum = document.getElementById('fileNum').value.trim();
+        const res = await fetch(`${apiBase}/ha/results?fileNum=${encodeURIComponent(fileNum)}`);
+        show('out-ha-results', await res.json());
+      });
+
+      document.getElementById('form-clinical').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('clinicalResultId').value;
+        const res = await fetch(`${apiBase}/ha/clinical-items/${id}`);
+        show('out-clinical', await res.json());
+      });
+
+      document.getElementById('form-pathology').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('pathologyResultId').value;
+        const res = await fetch(`${apiBase}/ha/pathology/${id}`);
+        show('out-pathology', await res.json());
+      });
+
+      document.getElementById('form-imaging').addEventListener('submit', async e => {
+        e.preventDefault();
+        const itemNum = document.getElementById('itemNum').value;
+        const res = await fetch(`${apiBase}/ha/imaging?itemNum=${itemNum}`);
+        show('out-imaging', await res.json());
+      });
+    </script>
+  </body>
+</html>

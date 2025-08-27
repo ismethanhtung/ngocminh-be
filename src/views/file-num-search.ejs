@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        .search-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 30px;
+        }
+        .search-form {
+            background: #f8f9fa;
+            padding: 30px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .search-input {
+            border-radius: 50px;
+            border: 2px solid #e9ecef;
+            padding: 15px 25px;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .search-btn {
+            border-radius: 50px;
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            transition: all 0.3s;
+        }
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .content-area {
+            padding: 30px;
+        }
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .info-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+        }
+        .info-body {
+            padding: 20px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 150px;
+        }
+        .info-value {
+            color: #212529;
+            text-align: right;
+            flex: 1;
+            margin-left: 20px;
+        }
+        .result-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .result-table .table {
+            margin-bottom: 0;
+        }
+        .result-table th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+            color: #495057;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .alert-not-found {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="search-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="fas fa-search me-3"></i>
+                            Tìm kiếm thông tin bệnh nhân
+                        </h2>
+                        <p class="mb-0 opacity-75">Nhập FileNum để tìm kiếm thông tin từ các bảng và view</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="/database-viewer" class="btn btn-light">
+                            <i class="fas fa-database me-2"></i>
+                            Database Viewer
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Form -->
+            <div class="search-form">
+                <form id="searchForm" method="GET" action="/file-num/search">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control search-input" 
+                                       id="fileNumInput" 
+                                       name="fileNum"
+                                       placeholder="Nhập FileNum (ví dụ: 25003245)"
+                                       value="<%= locals.fileNum || '' %>"
+                                       required>
+                                <button class="btn btn-primary search-btn" type="submit">
+                                    <i class="fas fa-search me-2"></i>
+                                    Tìm kiếm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <% if (locals.searchPerformed) { %>
+                    <% if (locals.message) { %>
+                        <div class="alert-not-found">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <%= message %>
+                        </div>
+                    <% } else if (locals.patientInfo) { %>
+                        <!-- Thông tin CR_Patient -->
+                        <% if (patientInfo.crPatient) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-user me-2"></i>
+                                    Thông tin CR_Patient
+                                </div>
+                                <div class="info-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-row">
+                                                <span class="info-label">Nhóm máu:</span>
+                                                <span class="info-value"><%= patientInfo.crPatient.BloodType || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Hút thuốc:</span>
+                                                <span class="info-value"><%= patientInfo.crPatient.Smoking || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Uống rượu:</span>
+                                                <span class="info-value"><%= patientInfo.crPatient.Alcohol || 'N/A' %></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-row">
+                                                <span class="info-label">Người giám hộ:</span>
+                                                <span class="info-value"><%= patientInfo.crPatient.Guardian || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">CMND giám hộ:</span>
+                                                <span class="info-value"><%= patientInfo.crPatient.GuardianCMND || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">CCCD:</span>
+                                                <span class="info-value"><%= patientInfo.crPatient.CCCD || 'N/A' %></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Thông tin PatientSearchView -->
+                        <% if (patientInfo.patientSearch) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Thông tin PatientSearchView
+                                </div>
+                                <div class="info-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-row">
+                                                <span class="info-label">Họ tên:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.FullName || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Ngày sinh:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.Dob || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Giới tính:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.Sex || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Điện thoại:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.Mobile || patientInfo.patientSearch.Phone || 'N/A' %></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-row">
+                                                <span class="info-label">Địa chỉ:</span>
+                                                <span class="info-value"><%= [patientInfo.patientSearch.AddressNo, patientInfo.patientSearch.Street].filter(Boolean).join(', ') || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Khoa:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.Department || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">CCCD:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.CCCD || 'N/A' %></span>
+                                            </div>
+                                            <div class="info-row">
+                                                <span class="info-label">Người giám hộ:</span>
+                                                <span class="info-value"><%= patientInfo.patientSearch.Guardian || 'N/A' %></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Kết quả ViewHAResult -->
+                        <% if (patientInfo.haResults && patientInfo.haResults.length > 0) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-flask me-2"></i>
+                                    Kết quả xét nghiệm (ViewHAResult) - <%= patientInfo.haResults.length %> kết quả
+                                </div>
+                                <div class="result-table">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <% if (patientInfo.haResults.length > 0) { %>
+                                                        <% Object.keys(patientInfo.haResults[0]).forEach(key => { %>
+                                                            <th><%= key %></th>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% patientInfo.haResults.forEach(result => { %>
+                                                    <tr>
+                                                        <% Object.values(result).forEach(value => { %>
+                                                            <td><%= value || 'N/A' %></td>
+                                                        <% }); %>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Kết quả ViewMO -->
+                        <% if (patientInfo.moResults && patientInfo.moResults.length > 0) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-stethoscope me-2"></i>
+                                    Kết quả khám bệnh (ViewMO) - <%= patientInfo.moResults.length %> kết quả
+                                </div>
+                                <div class="result-table">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <% if (patientInfo.moResults.length > 0) { %>
+                                                        <% Object.keys(patientInfo.moResults[0]).forEach(key => { %>
+                                                            <th><%= key %></th>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% patientInfo.moResults.forEach(result => { %>
+                                                    <tr>
+                                                        <% Object.values(result).forEach(value => { %>
+                                                            <td><%= value || 'N/A' %></td>
+                                                        <% }); %>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Kết quả ViewPathologyResult -->
+                        <% if (patientInfo.pathologyResults && patientInfo.pathologyResults.length > 0) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-microscope me-2"></i>
+                                    Kết quả giải phẫu bệnh (ViewPathologyResult) - <%= patientInfo.pathologyResults.length %> kết quả
+                                </div>
+                                <div class="result-table">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <% if (patientInfo.pathologyResults.length > 0) { %>
+                                                        <% Object.keys(patientInfo.pathologyResults[0]).forEach(key => { %>
+                                                            <th><%= key %></th>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% patientInfo.pathologyResults.forEach(result => { %>
+                                                    <tr>
+                                                        <% Object.values(result).forEach(value => { %>
+                                                            <td><%= value || 'N/A' %></td>
+                                                        <% }); %>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Chi tiết giá trị GPB (CN_PathologyResultValue) -->
+                        <% if (patientInfo.pathologyResultValues && patientInfo.pathologyResultValues.length > 0) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-vials me-2"></i>
+                                    Chi tiết giá trị GPB (CN_PathologyResultValue) - <%= patientInfo.pathologyResultValues.length %> dòng
+                                </div>
+                                <div class="result-table">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <% if (patientInfo.pathologyResultValues.length > 0) { %>
+                                                        <% Object.keys(patientInfo.pathologyResultValues[0]).forEach(key => { %>
+                                                            <th><%= key %></th>
+                                                        <% }); %>
+                                                    <% } %>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% patientInfo.pathologyResultValues.forEach(row => { %>
+                                                    <tr>
+                                                        <% Object.values(row).forEach(value => { %>
+                                                            <td><%= value || 'N/A' %></td>
+                                                        <% }); %>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Thông tin PersonFullView -->
+                        <% if (patientInfo.personFull) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    Thông tin PersonFullView
+                                </div>
+                                <div class="result-table">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <% Object.keys(patientInfo.personFull).forEach(key => { %>
+                                                        <th><%= key %></th>
+                                                    <% }); %>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <% Object.values(patientInfo.personFull).forEach(value => { %>
+                                                        <td><%= value || 'N/A' %></td>
+                                                    <% }); %>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <!-- Thông tin PersonView -->
+                        <% if (patientInfo.person) { %>
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <i class="fas fa-user-tie me-2"></i>
+                                    Thông tin PersonView
+                                </div>
+                                <div class="result-table">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <% Object.keys(patientInfo.person).forEach(key => { %>
+                                                        <th><%= key %></th>
+                                                    <% }); %>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <% Object.values(patientInfo.person).forEach(value => { %>
+                                                        <td><%= value || 'N/A' %></td>
+                                                    <% }); %>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+
+                    <% } %>
+                <% } else { %>
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Nhập FileNum để bắt đầu tìm kiếm</h4>
+                        <p class="text-muted">Hệ thống sẽ tìm kiếm thông tin từ các bảng: CR_Patient, PatientSearchView, PersonFullView, PersonView, ViewHAResult, ViewMO, ViewPathologyResult</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-focus vào input khi trang load
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileNumInput = document.getElementById('fileNumInput');
+            if (fileNumInput) {
+                fileNumInput.focus();
+            }
+        });
+
+        // Xử lý form submit
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            const fileNum = document.getElementById('fileNumInput').value.trim();
+            if (!fileNum) {
+                e.preventDefault();
+                alert('Vui lòng nhập FileNum');
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>
