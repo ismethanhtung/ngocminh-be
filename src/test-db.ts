@@ -78,7 +78,7 @@ const testDatabaseConnection = async () => {
     const tablesWithEyeColumn = await prisma.$queryRaw`
       SELECT DISTINCT TABLE_NAME
       FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE COLUMN_NAME LIKE '%SubSessionId%'
+      WHERE COLUMN_NAME LIKE '%SubSession%'
       ORDER BY TABLE_NAME
     `;
     console.log('✅ Danh sách các bảng có cột chứa "eye" trong tên cột:');
