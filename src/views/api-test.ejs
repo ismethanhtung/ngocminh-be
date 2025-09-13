@@ -90,6 +90,88 @@
       </div>
     </div>
 
+    <div class="row">
+      <div class="card">
+        <h4>5) Tiền sử sản phụ khoa theo PatientId</h4>
+        <form id="form-obstetric-history">
+          <label>PatientId</label>
+          <input type="text" id="patientId" />
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-obstetric-history"></pre>
+      </div>
+      <div class="card">
+        <h4>6) Khám tổng quát theo PatientId</h4>
+        <form id="form-general-exam">
+          <label>PatientId</label>
+          <input type="text" id="patientIdGeneralExam" />
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-general-exam"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h4>7) ViewHAResult theo ItemNum</h4>
+        <form id="form-ha-by-item">
+          <label>ItemNum</label>
+          <input type="text" id="itemNumQuery" />
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-ha-by-item"></pre>
+      </div>
+
+      <div class="card">
+        <h4>8) Tất cả data trong ViewHAData</h4>
+        <form id="form-all-ha-data">
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-all-ha-data"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h4>9) ViewHAResultDetail theo DataId</h4>
+        <form id="form-result-detail">
+          <label>DataId</label>
+          <input type="number" id="dataId" />
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-result-detail"></pre>
+      </div>
+
+      <div class="card">
+        <h4>10) Cập nhật HA_ResultDetail theo Id</h4>
+        <form id="form-update-result-detail">
+          <label>Id</label>
+          <input type="number" id="updateId" required />
+
+          <label>HealthType</label>
+          <input type="text" id="healthType" placeholder="Loại sức khỏe" />
+
+          <label>Conclusion</label>
+          <textarea id="conclusion" placeholder="Kết luận" rows="3"></textarea>
+
+          <label>Suggestion</label>
+          <textarea id="suggestion" placeholder="Đề xuất" rows="3"></textarea>
+
+          <label>ConclusionDate</label>
+          <input type="date" id="conclusionDate" />
+
+          <label>FileName</label>
+          <input type="text" id="fileName" placeholder="Tên file" />
+
+          <label>ConclusionDoctor</label>
+          <input type="text" id="conclusionDoctor" placeholder="Bác sĩ kết luận" />
+
+          <button type="submit">Cập nhật</button>
+        </form>
+        <pre id="out-update-result-detail"></pre>
+      </div>
+    </div>
+
     <script>
       const apiBase = '<%= apiBase %>';
 
@@ -123,6 +205,76 @@
         const itemNum = document.getElementById('itemNum').value;
         const res = await fetch(`${apiBase}/ha/imaging?itemNum=${itemNum}`);
         show('out-imaging', await res.json());
+      });
+
+      document.getElementById('form-obstetric-history').addEventListener('submit', async e => {
+        e.preventDefault();
+        const patientId = document.getElementById('patientId').value;
+        const res = await fetch(
+          `${apiBase}/ha/obstetric-history?patientId=${encodeURIComponent(patientId)}`
+        );
+        show('out-obstetric-history', await res.json());
+      });
+
+      document.getElementById('form-general-exam').addEventListener('submit', async e => {
+        e.preventDefault();
+        const patientId = document.getElementById('patientIdGeneralExam').value;
+        const res = await fetch(
+          `${apiBase}/ha/general-exam?patientId=${encodeURIComponent(patientId)}`
+        );
+        show('out-general-exam', await res.json());
+      });
+
+      document.getElementById('form-ha-by-item').addEventListener('submit', async e => {
+        e.preventDefault();
+        const itemNum = document.getElementById('itemNumQuery').value;
+        const res = await fetch(
+          `${apiBase}/ha/results-by-item?itemNum=${encodeURIComponent(itemNum)}`
+        );
+        show('out-ha-by-item', await res.json());
+      });
+
+      document.getElementById('form-all-ha-data').addEventListener('submit', async e => {
+        e.preventDefault();
+        const res = await fetch(`${apiBase}/ha/all-data`);
+        show('out-all-ha-data', await res.json());
+      });
+
+      document.getElementById('form-result-detail').addEventListener('submit', async e => {
+        e.preventDefault();
+        const dataId = document.getElementById('dataId').value;
+        const res = await fetch(`${apiBase}/ha/result-detail/${dataId}`);
+        show('out-result-detail', await res.json());
+      });
+
+      document.getElementById('form-update-result-detail').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = document.getElementById('updateId').value;
+
+        const updateData = {};
+        const healthType = document.getElementById('healthType').value.trim();
+        const conclusion = document.getElementById('conclusion').value.trim();
+        const suggestion = document.getElementById('suggestion').value.trim();
+        const conclusionDate = document.getElementById('conclusionDate').value;
+        const fileName = document.getElementById('fileName').value.trim();
+        const conclusionDoctor = document.getElementById('conclusionDoctor').value.trim();
+
+        // Gửi tất cả các trường, kể cả chuỗi rỗng để có thể xóa
+        updateData.HealthType = healthType;
+        updateData.Conclusion = conclusion;
+        updateData.Suggestion = suggestion;
+        updateData.ConclusionDate = conclusionDate;
+        updateData.FileName = fileName;
+        updateData.ConclusionDoctor = conclusionDoctor;
+
+        const res = await fetch(`${apiBase}/ha/result-detail/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData),
+        });
+        show('out-update-result-detail', await res.json());
       });
     </script>
   </body>

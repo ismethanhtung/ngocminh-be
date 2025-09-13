@@ -244,4 +244,130 @@ export class HAService {
 
     return { sessionId, imagingResults, imagingData: decompressed };
   }
+
+  // 5) Tiền sử sản phụ khoa: lấy từ CN_GeneralPregnancy theo PatientId
+  async getObstetricHistoryByPatientId(patientId: string) {
+    const safeId = String(patientId || '').replace(/'/g, "''");
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT *
+      FROM CN_GeneralPregnancy
+      WHERE PatientId = '${safeId}'
+    `);
+    return rows as any[];
+  }
+
+  // 6) Khám tổng quát: lấy từ CN_GeneralExam theo PatientId
+  async getGeneralExamByPatientId(patientId: string) {
+    const safeId = String(patientId || '').replace(/'/g, "''");
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT *
+      FROM CN_GeneralExam
+      WHERE PatientId = '${safeId}'
+    `);
+    return rows as any[];
+  }
+
+  // 7) ViewHAResult theo ItemNum
+  async getHAResultsByItemNum(itemNum: string | number) {
+    const safeItem = String(itemNum ?? '').replace(/'/g, "''");
+    const results = await prisma.$queryRawUnsafe(`
+      SELECT *
+      FROM ViewHAResult
+      WHERE ItemNum = '${safeItem}'
+      ORDER BY StartDate DESC
+    `);
+    return results as any[];
+  }
+
+  // 8) Lấy tất cả data trong ViewHAData
+  async getAllHAData() {
+    const results = await prisma.$queryRawUnsafe(`
+      SELECT *
+      FROM ViewHAData
+      ORDER BY Id DESC
+    `);
+    return results as any[];
+  }
+
+  // 9) Lấy ViewHAResultDetail theo DataId
+  async getHAResultDetailByDataId(dataId: number) {
+    const results = await prisma.$queryRawUnsafe(`
+      SELECT *
+      FROM ViewHAResultDetail
+      WHERE DataId = ${Number(dataId)}
+      ORDER BY Id DESC
+    `);
+    return results as any[];
+  }
+
+  // 10) Cập nhật HA_ResultDetail theo Id
+  async updateHAResultDetail(
+    id: number,
+    updateData: {
+      HealthType?: string | null;
+      Conclusion?: string | null;
+      Suggestion?: string | null;
+      ConclusionDate?: string | null;
+      FileName?: string | null;
+      ConclusionDoctor?: string | null;
+    }
+  ) {
+    const setClause = [];
+
+    if (updateData.HealthType !== undefined) {
+      if (updateData.HealthType === null || updateData.HealthType === '') {
+        setClause.push('HealthType = NULL');
+      } else {
+        setClause.push(`HealthType = '${updateData.HealthType.replace(/'/g, "''")}'`);
+      }
+    }
+    if (updateData.Conclusion !== undefined) {
+      if (updateData.Conclusion === null || updateData.Conclusion === '') {
+        setClause.push('Conclusion = NULL');
+      } else {
+        setClause.push(`Conclusion = '${updateData.Conclusion.replace(/'/g, "''")}'`);
+      }
+    }
+    if (updateData.Suggestion !== undefined) {
+      if (updateData.Suggestion === null || updateData.Suggestion === '') {
+        setClause.push('Suggestion = NULL');
+      } else {
+        setClause.push(`Suggestion = '${updateData.Suggestion.replace(/'/g, "''")}'`);
+      }
+    }
+    if (updateData.ConclusionDate !== undefined) {
+      if (updateData.ConclusionDate === null || updateData.ConclusionDate === '') {
+        setClause.push('ConclusionDate = NULL');
+      } else {
+        setClause.push(`ConclusionDate = '${updateData.ConclusionDate}'`);
+      }
+    }
+    if (updateData.FileName !== undefined) {
+      if (updateData.FileName === null || updateData.FileName === '') {
+        setClause.push('FileName = NULL');
+      } else {
+        setClause.push(`FileName = '${updateData.FileName.replace(/'/g, "''")}'`);
+      }
+    }
+    if (updateData.ConclusionDoctor !== undefined) {
+      if (updateData.ConclusionDoctor === null || updateData.ConclusionDoctor === '') {
+        setClause.push('ConclusionDoctor = NULL');
+      } else {
+        setClause.push(`ConclusionDoctor = '${updateData.ConclusionDoctor.replace(/'/g, "''")}'`);
+      }
+    }
+
+    if (setClause.length === 0) {
+      throw new Error('Không có dữ liệu nào để cập nhật');
+    }
+
+    const query = `
+      UPDATE HA_ResultDetail 
+      SET ${setClause.join(', ')}
+      WHERE Id = ${Number(id)}
+    `;
+
+    const result = await prisma.$executeRawUnsafe(query);
+    return result;
+  }
 }

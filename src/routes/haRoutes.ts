@@ -16,4 +16,22 @@ router.get('/pathology/:resultId', controller.getPathology);
 // 4) Imaging chain by ItemNum
 router.get('/imaging', controller.getImagingChain);
 
+// 5) Obstetric history by PatientId
+router.get('/obstetric-history', controller.getObstetricHistory);
+
+// 6) General exam by PatientId
+router.get('/general-exam', controller.getGeneralExam);
+
+// 7) ViewHAResult by ItemNum
+router.get('/results-by-item', controller.getResultsByItemNum);
+
+// 8) All HAData
+router.get('/all-data', controller.getAllHAData);
+
+// 9) ViewHAResultDetail by DataId
+router.get('/result-detail/:dataId', controller.getHAResultDetailByDataId);
+
+// 10) Update HA_ResultDetail by Id
+router.put('/result-detail/:id', controller.updateHAResultDetail);
+
 export { router as haRoutes };
