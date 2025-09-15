@@ -17,6 +17,11 @@ if (process.env.NODE_ENV === 'production') {
       { emit: 'event', level: 'error' },
       { emit: 'event', level: 'warn' },
     ],
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL + ';charset=utf8;',
+      },
+    },
   });
 } else {
   if (!global.__db) {
@@ -26,6 +31,11 @@ if (process.env.NODE_ENV === 'production') {
         { emit: 'event', level: 'error' },
         { emit: 'event', level: 'warn' },
       ],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL + ';charset=utf8;',
+        },
+      },
     });
   }
   prisma = global.__db;

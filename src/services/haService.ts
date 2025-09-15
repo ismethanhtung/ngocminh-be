@@ -312,53 +312,99 @@ export class HAService {
       ConclusionDoctor?: string | null;
     }
   ) {
+    // Sử dụng Prisma's parameterized query để tránh SQL injection và xử lý UTF-8 đúng cách
+    const updateFields: any = {};
+
+    if (updateData.HealthType !== undefined) {
+      updateFields.HealthType =
+        updateData.HealthType === null || updateData.HealthType === ''
+          ? null
+          : updateData.HealthType;
+    }
+    if (updateData.Conclusion !== undefined) {
+      updateFields.Conclusion =
+        updateData.Conclusion === null || updateData.Conclusion === ''
+          ? null
+          : updateData.Conclusion;
+    }
+    if (updateData.Suggestion !== undefined) {
+      updateFields.Suggestion =
+        updateData.Suggestion === null || updateData.Suggestion === ''
+          ? null
+          : updateData.Suggestion;
+    }
+    if (updateData.ConclusionDate !== undefined) {
+      updateFields.ConclusionDate =
+        updateData.ConclusionDate === null || updateData.ConclusionDate === ''
+          ? null
+          : updateData.ConclusionDate;
+    }
+    if (updateData.FileName !== undefined) {
+      updateFields.FileName =
+        updateData.FileName === null || updateData.FileName === '' ? null : updateData.FileName;
+    }
+    if (updateData.ConclusionDoctor !== undefined) {
+      updateFields.ConclusionDoctor =
+        updateData.ConclusionDoctor === null || updateData.ConclusionDoctor === ''
+          ? null
+          : updateData.ConclusionDoctor;
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      throw new Error('Không có dữ liệu nào để cập nhật');
+    }
+
+    // Sử dụng string concatenation với N prefix cho Unicode để đảm bảo UTF-8 được xử lý đúng
     const setClause = [];
 
     if (updateData.HealthType !== undefined) {
       if (updateData.HealthType === null || updateData.HealthType === '') {
         setClause.push('HealthType = NULL');
       } else {
-        setClause.push(`HealthType = '${updateData.HealthType.replace(/'/g, "''")}'`);
+        // Escape single quotes và sử dụng N prefix cho Unicode
+        const escapedValue = updateData.HealthType.replace(/'/g, "''");
+        setClause.push(`HealthType = N'${escapedValue}'`);
       }
     }
     if (updateData.Conclusion !== undefined) {
       if (updateData.Conclusion === null || updateData.Conclusion === '') {
         setClause.push('Conclusion = NULL');
       } else {
-        setClause.push(`Conclusion = '${updateData.Conclusion.replace(/'/g, "''")}'`);
+        const escapedValue = updateData.Conclusion.replace(/'/g, "''");
+        setClause.push(`Conclusion = N'${escapedValue}'`);
       }
     }
     if (updateData.Suggestion !== undefined) {
       if (updateData.Suggestion === null || updateData.Suggestion === '') {
         setClause.push('Suggestion = NULL');
       } else {
-        setClause.push(`Suggestion = '${updateData.Suggestion.replace(/'/g, "''")}'`);
+        const escapedValue = updateData.Suggestion.replace(/'/g, "''");
+        setClause.push(`Suggestion = N'${escapedValue}'`);
       }
     }
     if (updateData.ConclusionDate !== undefined) {
       if (updateData.ConclusionDate === null || updateData.ConclusionDate === '') {
         setClause.push('ConclusionDate = NULL');
       } else {
-        setClause.push(`ConclusionDate = '${updateData.ConclusionDate}'`);
+        const escapedValue = updateData.ConclusionDate.replace(/'/g, "''");
+        setClause.push(`ConclusionDate = '${escapedValue}'`);
       }
     }
     if (updateData.FileName !== undefined) {
       if (updateData.FileName === null || updateData.FileName === '') {
         setClause.push('FileName = NULL');
       } else {
-        setClause.push(`FileName = '${updateData.FileName.replace(/'/g, "''")}'`);
+        const escapedValue = updateData.FileName.replace(/'/g, "''");
+        setClause.push(`FileName = N'${escapedValue}'`);
       }
     }
     if (updateData.ConclusionDoctor !== undefined) {
       if (updateData.ConclusionDoctor === null || updateData.ConclusionDoctor === '') {
         setClause.push('ConclusionDoctor = NULL');
       } else {
-        setClause.push(`ConclusionDoctor = '${updateData.ConclusionDoctor.replace(/'/g, "''")}'`);
+        const escapedValue = updateData.ConclusionDoctor.replace(/'/g, "''");
+        setClause.push(`ConclusionDoctor = N'${escapedValue}'`);
       }
-    }
-
-    if (setClause.length === 0) {
-      throw new Error('Không có dữ liệu nào để cập nhật');
     }
 
     const query = `
@@ -367,6 +413,19 @@ export class HAService {
       WHERE Id = ${Number(id)}
     `;
 
+    const result = await prisma.$executeRawUnsafe(query);
+    return result;
+  }
+
+  // 11) Cập nhật FileName theo ItemNum (từ tên file)
+  async updateFileNameByItemNum(itemNum: string | number, fileName: string) {
+    const safeItem = String(itemNum ?? '').replace(/'/g, "''");
+    const safeFile = String(fileName ?? '').replace(/'/g, "''");
+    const query = `
+      UPDATE HA_ResultDetail
+      SET FileName = N'${safeFile}'
+      WHERE ItemNum = '${safeItem}'
+    `;
     const result = await prisma.$executeRawUnsafe(query);
     return result;
   }

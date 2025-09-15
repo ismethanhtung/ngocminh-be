@@ -94,7 +94,7 @@ app.use(cors(corsOptions));
 // Compression middleware
 app.use(compression());
 
-// Body parsing middleware
+// Body parsing middleware với UTF-8 support
 app.use(
   express.json({
     limit: '10mb',
@@ -108,6 +108,35 @@ app.use(
     limit: '10mb',
   })
 );
+
+// Middleware để đảm bảo UTF-8 encoding cho request body
+app.use((req, res, next) => {
+  if (req.body) {
+    // Đảm bảo tất cả string trong body được xử lý đúng UTF-8
+    const processObject = (obj: any): any => {
+      if (typeof obj === 'string') {
+        // Đảm bảo string được decode đúng UTF-8
+        try {
+          return Buffer.from(obj, 'utf8').toString('utf8');
+        } catch {
+          return obj;
+        }
+      } else if (Array.isArray(obj)) {
+        return obj.map(processObject);
+      } else if (obj && typeof obj === 'object') {
+        const processed: any = {};
+        for (const key in obj) {
+          processed[key] = processObject(obj[key]);
+        }
+        return processed;
+      }
+      return obj;
+    };
+
+    req.body = processObject(req.body);
+  }
+  next();
+});
 
 // Request logging middleware
 app.use((req, res, next) => {

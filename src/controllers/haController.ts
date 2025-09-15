@@ -218,4 +218,47 @@ export class HAController {
       });
     }
   }
+
+  // 11) POST /ha/upload-ha-docs - Upload nhiều file và cập nhật FileName theo ItemNum
+  async uploadHADocuments(req: Request, res: Response) {
+    try {
+      const files = (req.files as Express.Multer.File[]) || [];
+      if (!files.length) {
+        return res.status(400).json({ success: false, message: 'Không có file nào được upload' });
+      }
+
+      // Map từng file: trích ItemNum từ tên file, cập nhật FileName
+      const results: Array<{ file: string; itemNum: string | null; updated: number }> = [];
+
+      for (const f of files) {
+        const original = f.originalname;
+        const match = original.match(/^(\d+)/); // Lấy chuỗi số đầu tên file làm ItemNum
+        const itemNum = match ? match[1] : null;
+        let updated = 0;
+        if (itemNum) {
+          updated = await haService.updateFileNameByItemNum(itemNum, original);
+        }
+        results.push({ file: original, itemNum, updated });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Upload và cập nhật FileName thành công',
+        files: files.map(f => ({
+          originalName: f.originalname,
+          savedAs: f.filename,
+          path: f.path,
+          size: f.size,
+          mimetype: f.mimetype,
+        })),
+        updates: results,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi khi upload và cập nhật FileName',
+        error: (error as Error).message,
+      });
+    }
+  }
 }

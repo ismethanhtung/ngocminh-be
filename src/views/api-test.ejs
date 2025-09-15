@@ -62,6 +62,16 @@
         </form>
         <pre id="out-clinical"></pre>
       </div>
+
+      <div class="card">
+        <h4>11) Upload tài liệu HA và cập nhật FileName theo ItemNum</h4>
+        <form id="form-upload-ha-docs">
+          <label>Chọn 1 hoặc nhiều file (vd: 250015134.pdf)</label>
+          <input type="file" id="haDocs" name="files" multiple />
+          <button type="submit">Upload</button>
+        </form>
+        <pre id="out-upload-ha-docs"></pre>
+      </div>
     </div>
 
     <div class="row">
@@ -275,6 +285,21 @@
           body: JSON.stringify(updateData),
         });
         show('out-update-result-detail', await res.json());
+      });
+
+      // 11) Upload HA docs và cập nhật FileName theo ItemNum
+      document.getElementById('form-upload-ha-docs').addEventListener('submit', async e => {
+        e.preventDefault();
+        const input = document.getElementById('haDocs');
+        const formData = new FormData();
+        for (const file of input.files) {
+          formData.append('files', file);
+        }
+        const res = await fetch(`${apiBase}/ha/upload-ha-docs`, {
+          method: 'POST',
+          body: formData,
+        });
+        show('out-upload-ha-docs', await res.json());
       });
     </script>
   </body>

@@ -59,6 +59,22 @@ const createStorage = (subfolder: string) => {
   });
 };
 
+// Storage that preserves original filename (for HA document uploads where filename encodes ItemNum)
+const createOriginalNameStorage = (subfolder: string) => {
+  return multer.diskStorage({
+    destination: (req: Request, file: Express.Multer.File, cb) => {
+      const uploadPath = path.join(config.upload.path, subfolder);
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+      cb(null, uploadPath);
+    },
+    filename: (req: Request, file: Express.Multer.File, cb) => {
+      cb(null, file.originalname);
+    },
+  });
+};
+
 // Memory storage for direct database storage
 const memoryStorage = multer.memoryStorage();
 
@@ -107,6 +123,12 @@ export const uploadConfig = {
   documents: multer({
     ...multerConfig,
     storage: createStorage('documents'),
+  }),
+
+  // HA result documents (keep original file name to map to ItemNum)
+  haDocs: multer({
+    ...multerConfig,
+    storage: createOriginalNameStorage('ha-docs'),
   }),
 };
 

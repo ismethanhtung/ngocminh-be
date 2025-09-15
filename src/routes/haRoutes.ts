@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { HAController } from '../controllers/haController';
+import { uploadMultiple } from '../middleware/upload';
 
 const router = Router();
 const controller = new HAController();
@@ -33,5 +34,8 @@ router.get('/result-detail/:dataId', controller.getHAResultDetailByDataId);
 
 // 10) Update HA_ResultDetail by Id
 router.put('/result-detail/:id', controller.updateHAResultDetail);
+
+// 11) Upload nhiều file HA docs và cập nhật FileName theo ItemNum
+router.post('/upload-ha-docs', uploadMultiple('files', 10, 'haDocs'), controller.uploadHADocuments);
 
 export { router as haRoutes };
