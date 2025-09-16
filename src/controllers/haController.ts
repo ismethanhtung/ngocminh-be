@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { HAService } from '../services/haService';
+import fs from 'fs';
+import path from 'path';
+import { config } from '../config/env';
 
 const haService = new HAService();
 
@@ -257,6 +260,51 @@ export class HAController {
       return res.status(500).json({
         success: false,
         message: 'Lỗi khi upload và cập nhật FileName',
+        error: (error as Error).message,
+      });
+    }
+  }
+
+  // 12) GET /ha/ha-docs/:filename - Tải file đã upload theo tên file
+  async downloadHADocument(req: Request, res: Response) {
+    try {
+      const raw = String(req.params.filename || '').trim();
+      if (!raw) {
+        return res.status(400).json({ success: false, message: 'Thiếu tên file' });
+      }
+      // Ngăn path traversal, chỉ cho phép tên file (basename)
+      const filename = path.basename(raw);
+      const filePath = path.join(process.cwd(), config.upload.path, 'ha-docs', filename);
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy file' });
+      }
+
+      // Set header để hiển thị file inline thay vì tải về
+      res.setHeader('Content-Disposition', 'inline');
+      return res.sendFile(filePath);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi khi tải file',
+        error: (error as Error).message,
+      });
+    }
+  }
+
+  // 13) GET /ha/result-detail-by-item?itemNum=XXXX - Lấy ViewHAResultDetail theo ItemNum
+  async getHAResultDetailByItemNum(req: Request, res: Response) {
+    try {
+      const itemNum = String(req.query.itemNum || '').trim();
+      if (!itemNum) {
+        return res.status(400).json({ success: false, message: 'Thiếu tham số itemNum' });
+      }
+      const rows = await haService.getHAResultDetailByItemNum(itemNum);
+      return res.json({ success: true, data: rows });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi khi lấy ViewHAResultDetail theo ItemNum',
         error: (error as Error).message,
       });
     }

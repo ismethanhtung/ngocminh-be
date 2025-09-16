@@ -72,6 +72,26 @@
         </form>
         <pre id="out-upload-ha-docs"></pre>
       </div>
+
+      <div class="card">
+        <h4>12) Tải file đã upload theo filename</h4>
+        <form id="form-download-ha-doc">
+          <label>Filename</label>
+          <input type="text" id="downloadFileName" placeholder="vd: 250015134.pdf" />
+          <button type="submit">Tải xuống</button>
+        </form>
+        <pre id="out-download-ha-doc"></pre>
+      </div>
+
+      <div class="card">
+        <h4>13) ViewHAResultDetail theo ItemNum</h4>
+        <form id="form-result-detail-by-item">
+          <label>ItemNum</label>
+          <input type="text" id="itemNumForResultDetail" placeholder="vd: 250015134" />
+          <button type="submit">Gọi API</button>
+        </form>
+        <pre id="out-result-detail-by-item"></pre>
+      </div>
     </div>
 
     <div class="row">
@@ -300,6 +320,33 @@
           body: formData,
         });
         show('out-upload-ha-docs', await res.json());
+      });
+
+      // 12) Download HA doc theo filename
+      document.getElementById('form-download-ha-doc').addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = document.getElementById('downloadFileName').value.trim();
+        if (!name) {
+          show('out-download-ha-doc', { success: false, message: 'Vui lòng nhập filename' });
+          return;
+        }
+        // mở file ở tab mới
+        window.open(`${apiBase}/ha/ha-docs/${encodeURIComponent(name)}`, '_blank');
+        show('out-download-ha-doc', { success: true, message: 'Đang tải file ở tab mới' });
+      });
+
+      // 13) ViewHAResultDetail theo ItemNum
+      document.getElementById('form-result-detail-by-item').addEventListener('submit', async e => {
+        e.preventDefault();
+        const itemNum = document.getElementById('itemNumForResultDetail').value.trim();
+        if (!itemNum) {
+          show('out-result-detail-by-item', { success: false, message: 'Vui lòng nhập ItemNum' });
+          return;
+        }
+        const res = await fetch(
+          `${apiBase}/ha/result-detail-by-item?itemNum=${encodeURIComponent(itemNum)}`
+        );
+        show('out-result-detail-by-item', await res.json());
       });
     </script>
   </body>

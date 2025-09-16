@@ -38,4 +38,10 @@ router.put('/result-detail/:id', controller.updateHAResultDetail);
 // 11) Upload nhiều file HA docs và cập nhật FileName theo ItemNum
 router.post('/upload-ha-docs', uploadMultiple('files', 10, 'haDocs'), controller.uploadHADocuments);
 
+// 12) Tải file theo filename
+router.get('/ha-docs/:filename', controller.downloadHADocument);
+
+// 13) ViewHAResultDetail theo ItemNum
+router.get('/result-detail-by-item', controller.getHAResultDetailByItemNum);
+
 export { router as haRoutes };

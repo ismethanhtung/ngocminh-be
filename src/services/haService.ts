@@ -300,6 +300,18 @@ export class HAService {
     return results as any[];
   }
 
+  // 9b) Lấy ViewHAResultDetail theo ItemNum
+  async getHAResultDetailByItemNum(itemNum: string | number) {
+    const safeItem = String(itemNum ?? '').replace(/'/g, "''");
+    const results = await prisma.$queryRawUnsafe(`
+      SELECT *
+      FROM ViewHAResultDetail
+      WHERE ItemNum = '${safeItem}'
+      ORDER BY Id DESC
+    `);
+    return results as any[];
+  }
+
   // 10) Cập nhật HA_ResultDetail theo Id
   async updateHAResultDetail(
     id: number,
