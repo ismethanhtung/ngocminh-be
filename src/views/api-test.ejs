@@ -96,6 +96,54 @@
 
     <div class="row">
       <div class="card">
+        <h4>14) Lấy thông tin file từ S3</h4>
+        <form id="form-s3-file-info">
+          <label>Filename</label>
+          <input type="text" id="s3FileName" placeholder="vd: example.pdf" />
+          <button type="submit">Lấy thông tin</button>
+        </form>
+        <pre id="out-s3-file-info"></pre>
+      </div>
+
+      <div class="card">
+        <h4>15) Tạo signed URL để tải file từ S3</h4>
+        <form id="form-s3-download-url">
+          <label>Filename</label>
+          <input type="text" id="s3DownloadFileName" placeholder="vd: example.pdf" />
+          <label>Thời gian hết hạn (giây)</label>
+          <input type="number" id="s3ExpiresIn" placeholder="3600" value="3600" />
+          <button type="submit">Tạo URL</button>
+        </form>
+        <pre id="out-s3-download-url"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h4>16) Tải file trực tiếp từ S3</h4>
+        <form id="form-s3-download">
+          <label>Filename</label>
+          <input type="text" id="s3DirectDownloadFileName" placeholder="vd: example.pdf" />
+          <button type="submit">Tải file</button>
+        </form>
+        <pre id="out-s3-download"></pre>
+      </div>
+
+      <div class="card">
+        <h4>17) Redirect đến file trong S3</h4>
+        <form id="form-s3-redirect">
+          <label>Filename</label>
+          <input type="text" id="s3RedirectFileName" placeholder="vd: example.pdf" />
+          <label>Thời gian hết hạn (giây)</label>
+          <input type="number" id="s3RedirectExpiresIn" placeholder="3600" value="3600" />
+          <button type="submit">Redirect</button>
+        </form>
+        <pre id="out-s3-redirect"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
         <h4>3) Xét nghiệm (Pathology) theo ResultId</h4>
         <form id="form-pathology">
           <label
@@ -347,6 +395,73 @@
           `${apiBase}/ha/result-detail-by-item?itemNum=${encodeURIComponent(itemNum)}`
         );
         show('out-result-detail-by-item', await res.json());
+      });
+
+      // 14) Lấy thông tin file từ S3
+      document.getElementById('form-s3-file-info').addEventListener('submit', async e => {
+        e.preventDefault();
+        const filename = document.getElementById('s3FileName').value.trim();
+        if (!filename) {
+          show('out-s3-file-info', { success: false, message: 'Vui lòng nhập filename' });
+          return;
+        }
+        const res = await fetch(`${apiBase}/s3/file-info/${encodeURIComponent(filename)}`);
+        show('out-s3-file-info', await res.json());
+      });
+
+      // 15) Tạo signed URL để tải file từ S3
+      document.getElementById('form-s3-download-url').addEventListener('submit', async e => {
+        e.preventDefault();
+        const filename = document.getElementById('s3DownloadFileName').value.trim();
+        const expiresIn = document.getElementById('s3ExpiresIn').value;
+        if (!filename) {
+          show('out-s3-download-url', { success: false, message: 'Vui lòng nhập filename' });
+          return;
+        }
+        const url = `${apiBase}/s3/download-url/${encodeURIComponent(filename)}${expiresIn ? `?expiresIn=${expiresIn}` : ''}`;
+        const res = await fetch(url);
+        const result = await res.json();
+        show('out-s3-download-url', result);
+
+        // Nếu có signed URL, hiển thị link để mở
+        if (result.success && result.data.signedUrl) {
+          const link = document.createElement('a');
+          link.href = result.data.signedUrl;
+          link.target = '_blank';
+          link.textContent = 'Mở file trong tab mới';
+          link.style.display = 'block';
+          link.style.marginTop = '10px';
+          link.style.color = '#007bff';
+          document.getElementById('out-s3-download-url').parentNode.appendChild(link);
+        }
+      });
+
+      // 16) Tải file trực tiếp từ S3
+      document.getElementById('form-s3-download').addEventListener('submit', async e => {
+        e.preventDefault();
+        const filename = document.getElementById('s3DirectDownloadFileName').value.trim();
+        if (!filename) {
+          show('out-s3-download', { success: false, message: 'Vui lòng nhập filename' });
+          return;
+        }
+        // Mở file download trong tab mới
+        window.open(`${apiBase}/s3/download/${encodeURIComponent(filename)}`, '_blank');
+        show('out-s3-download', { success: true, message: 'Đang tải file ở tab mới' });
+      });
+
+      // 17) Redirect đến file trong S3
+      document.getElementById('form-s3-redirect').addEventListener('submit', async e => {
+        e.preventDefault();
+        const filename = document.getElementById('s3RedirectFileName').value.trim();
+        const expiresIn = document.getElementById('s3RedirectExpiresIn').value;
+        if (!filename) {
+          show('out-s3-redirect', { success: false, message: 'Vui lòng nhập filename' });
+          return;
+        }
+        const url = `${apiBase}/s3/redirect/${encodeURIComponent(filename)}${expiresIn ? `?expiresIn=${expiresIn}` : ''}`;
+        // Redirect đến file
+        window.location.href = url;
+        show('out-s3-redirect', { success: true, message: 'Đang redirect đến file...' });
       });
     </script>
   </body>

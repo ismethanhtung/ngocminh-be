@@ -26,6 +26,8 @@
   "author": "Thanh Tung",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.899.0",
+    "@aws-sdk/s3-request-presigner": "^3.899.0",
     "@prisma/client": "^5.7.1",
     "@types/ejs": "^3.1.5",
     "@types/mssql": "^9.1.7",

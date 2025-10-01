@@ -6,6 +6,7 @@ import { healthRoutes } from './healthRoutes';
 import databaseViewerRoutes from './databaseViewerRoutes';
 import fileNumRoutes from './fileNumRoutes';
 import { haRoutes } from './haRoutes';
+import s3Routes from './s3Routes';
 
 const router = Router();
 
@@ -30,6 +31,9 @@ router.use('/database-viewer', databaseViewerRoutes);
 // FileNum search routes
 router.use('/file-num', fileNumRoutes);
 
+// S3 file management routes
+router.use('/s3', s3Routes);
+
 // API documentation endpoint
 router.get('/', (req, res) => {
   res.json({
@@ -44,6 +48,7 @@ router.get('/', (req, res) => {
       pacs: '/pacs',
       databaseViewer: '/database-viewer',
       fileNumSearch: '/file-num',
+      s3: '/s3',
     },
     documentation: {
       swagger: '/docs',

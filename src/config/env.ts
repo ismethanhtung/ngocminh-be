@@ -37,6 +37,12 @@ const envSchema = Joi.object({
   RATE_LIMIT_WINDOW_MS: Joi.number().positive().default(900000), // 15 minutes
 
   RATE_LIMIT_MAX_REQUESTS: Joi.number().positive().default(100),
+
+  // AWS S3 Configuration
+  AWS_ACCESS_KEY_ID: Joi.string().required().description('AWS Access Key ID is required'),
+  AWS_SECRET_ACCESS_KEY: Joi.string().required().description('AWS Secret Access Key is required'),
+  AWS_REGION: Joi.string().default('ap-southeast-1'),
+  AWS_S3_BUCKET: Joi.string().required().description('S3 Bucket name is required'),
 }).unknown();
 
 // Validate environment variables
@@ -72,6 +78,12 @@ export const config = {
   rateLimit: {
     windowMs: envVars.RATE_LIMIT_WINDOW_MS,
     maxRequests: envVars.RATE_LIMIT_MAX_REQUESTS,
+  },
+  aws: {
+    accessKeyId: envVars.AWS_ACCESS_KEY_ID,
+    secretAccessKey: envVars.AWS_SECRET_ACCESS_KEY,
+    region: envVars.AWS_REGION,
+    s3Bucket: envVars.AWS_S3_BUCKET,
   },
 };
 
