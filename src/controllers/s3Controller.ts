@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { S3Service } from '../services/s3Service';
 import { logger } from '../config/logger';
 import { Readable } from 'stream';
+import { uploadMultiple, uploadSingle } from '../middleware/upload';
+import type { RequestHandler } from 'express';
+import { S3Service } from '../services/s3Service';
 
 export class S3Controller {
   /**
@@ -191,6 +194,67 @@ export class S3Controller {
       });
     }
   }
+
+  /**
+   * Upload 1 file lên S3
+   * POST /api/s3/upload (field: file)
+   */
+  static uploadSingleToS3: RequestHandler[] = [
+    uploadSingle('file', 'memory'),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const file = req.file;
+        const { prefix } = req.body;
+
+        if (!file) {
+          res
+            .status(400)
+            .json({ success: false, message: 'Vui lòng gửi file với field name "file"' });
+          return;
+        }
+
+        const uploaded = await S3Service.uploadMulterFile(file, { prefix });
+        res.json({ success: true, message: 'Upload thành công', data: uploaded });
+      } catch (error: any) {
+        logger.error('Lỗi uploadSingleToS3:', error);
+        res
+          .status(500)
+          .json({ success: false, message: 'Lỗi server khi upload', error: error.message });
+      }
+    },
+  ];
+
+  /**
+   * Upload nhiều file lên S3
+   * POST /api/s3/upload-multiple (field: files)
+   */
+  static uploadMultipleToS3: RequestHandler[] = [
+    uploadMultiple('files', 10, 'memory'),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const files = (req.files as Express.Multer.File[]) || [];
+        const { prefix } = req.body;
+
+        if (!files.length) {
+          res.status(400).json({
+            success: false,
+            message: 'Vui lòng gửi ít nhất 1 file với field name "files"',
+          });
+          return;
+        }
+
+        const uploaded = await S3Service.uploadMulterFiles(files, { prefix });
+        res.json({ success: true, message: 'Upload nhiều file thành công', data: uploaded });
+      } catch (error: any) {
+        logger.error('Lỗi uploadMultipleToS3:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Lỗi server khi upload nhiều file',
+          error: error.message,
+        });
+      }
+    },
+  ];
 
   /**
    * Lấy file với thông tin đầy đủ (bao gồm signed URL)

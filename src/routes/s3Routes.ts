@@ -41,4 +41,16 @@ router.get('/file/:filename', S3Controller.getFileWithInfo);
  */
 router.get('/redirect/:filename', S3Controller.redirectToFile);
 
+/**
+ * @route POST /api/s3/upload
+ * @desc Upload 1 file lên S3 (field name: file)
+ */
+router.post('/upload', ...S3Controller.uploadSingleToS3);
+
+/**
+ * @route POST /api/s3/upload-multiple
+ * @desc Upload nhiều file lên S3 (field name: files)
+ */
+router.post('/upload-multiple', ...S3Controller.uploadMultipleToS3);
+
 export default router;

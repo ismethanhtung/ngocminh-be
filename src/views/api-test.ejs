@@ -130,6 +130,30 @@
       </div>
 
       <div class="card">
+        <h4>16b) Upload 1 file lên S3</h4>
+        <form id="form-s3-upload-single">
+          <label>Chọn file</label>
+          <input type="file" id="s3UploadSingleFile" />
+          <label>Prefix (tuỳ chọn)</label>
+          <input type="text" id="s3UploadSinglePrefix" placeholder="vd: medical/ha" />
+          <button type="submit">Upload</button>
+        </form>
+        <pre id="out-s3-upload-single"></pre>
+      </div>
+
+      <div class="card">
+        <h4>16c) Upload nhiều file lên S3</h4>
+        <form id="form-s3-upload-multiple">
+          <label>Chọn file</label>
+          <input type="file" id="s3UploadMultipleFiles" multiple />
+          <label>Prefix (tuỳ chọn)</label>
+          <input type="text" id="s3UploadMultiplePrefix" placeholder="vd: medical/ha" />
+          <button type="submit">Upload</button>
+        </form>
+        <pre id="out-s3-upload-multiple"></pre>
+      </div>
+
+      <div class="card">
         <h4>17) Redirect đến file trong S3</h4>
         <form id="form-s3-redirect">
           <label>Filename</label>
@@ -477,6 +501,55 @@
         // Mở file download trong tab mới
         window.open(`${apiBase}/s3/download/${encodeURIComponent(filename)}`, '_blank');
         show('out-s3-download', { success: true, message: 'Đang tải file ở tab mới' });
+      });
+
+      // 16b) Upload 1 file lên S3
+      document.getElementById('form-s3-upload-single').addEventListener('submit', async e => {
+        e.preventDefault();
+        const input = document.getElementById('s3UploadSingleFile');
+        const prefix = document.getElementById('s3UploadSinglePrefix').value.trim();
+        if (!input.files || input.files.length === 0) {
+          show('out-s3-upload-single', { success: false, message: 'Vui lòng chọn file' });
+          return;
+        }
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        if (prefix) formData.append('prefix', prefix);
+
+        const res = await fetch(`${apiBase}/s3/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        show('out-s3-upload-single', data);
+        if (data?.data?.signedUrl) {
+          const link = document.createElement('a');
+          link.href = data.data.signedUrl;
+          link.target = '_blank';
+          link.textContent = 'Mở file vừa upload';
+          link.style.display = 'block';
+          link.style.marginTop = '10px';
+          link.style.color = '#007bff';
+          document.getElementById('out-s3-upload-single').parentNode.appendChild(link);
+        }
+      });
+
+      // 16c) Upload nhiều file lên S3
+      document.getElementById('form-s3-upload-multiple').addEventListener('submit', async e => {
+        e.preventDefault();
+        const input = document.getElementById('s3UploadMultipleFiles');
+        const prefix = document.getElementById('s3UploadMultiplePrefix').value.trim();
+        if (!input.files || input.files.length === 0) {
+          show('out-s3-upload-multiple', { success: false, message: 'Vui lòng chọn file' });
+          return;
+        }
+        const formData = new FormData();
+        for (const file of input.files) formData.append('files', file);
+        if (prefix) formData.append('prefix', prefix);
+
+        const res = await fetch(`${apiBase}/s3/upload-multiple`, {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        show('out-s3-upload-multiple', data);
       });
 
       // 17) Redirect đến file trong S3

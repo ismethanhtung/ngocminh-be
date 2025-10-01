@@ -1,4 +1,9 @@
-import { S3Client, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { config } from '../config/env';
 import { logger } from '../config/logger';
@@ -84,6 +89,86 @@ export class S3Service {
       logger.error('Lỗi khi tạo signed URL:', error);
       throw new Error(`Lỗi khi tạo signed URL: ${error.message}`);
     }
+  }
+
+  /**
+   * Upload buffer lên S3
+   * @param key - Key (đường dẫn trong bucket)
+   * @param buffer - Dữ liệu file
+   * @param contentType - MIME type
+   */
+  static async uploadBuffer(
+    key: string,
+    buffer: Buffer,
+    contentType?: string
+  ): Promise<{ key: string; bucket: string }> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: config.aws.s3Bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+      });
+
+      await s3Client.send(command);
+      return { key, bucket: config.aws.s3Bucket };
+    } catch (error: any) {
+      logger.error('Lỗi khi upload buffer lên S3:', error);
+      throw new Error(`Lỗi khi upload lên S3: ${error.message}`);
+    }
+  }
+
+  /**
+   * Upload file từ Multer lên S3
+   */
+  static async uploadMulterFile(
+    file: Express.Multer.File,
+    options?: { key?: string; prefix?: string }
+  ): Promise<{
+    key: string;
+    bucket: string;
+    size: number;
+    contentType?: string;
+    signedUrl?: string;
+  }> {
+    const originalName = file.originalname;
+    const safeOriginal = originalName.replace(/[^a-zA-Z0-9.\-_\/]/g, '_');
+    const prefix = options?.prefix ? options.prefix.replace(/\/+$/g, '') + '/' : '';
+    // Giữ nguyên tên file gốc; không thêm timestamp để không "đổi tên"
+    const key = options?.key ?? `${prefix}${safeOriginal}`;
+
+    const result = await this.uploadBuffer(key, file.buffer, file.mimetype);
+    const signedUrl = await this.getSignedDownloadUrl(result.key, 3600);
+    return {
+      key: result.key,
+      bucket: result.bucket,
+      size: file.size,
+      contentType: file.mimetype,
+      signedUrl: signedUrl ?? undefined,
+    };
+  }
+
+  /**
+   * Upload nhiều file từ Multer lên S3
+   */
+  static async uploadMulterFiles(
+    files: Express.Multer.File[],
+    options?: { prefix?: string }
+  ): Promise<
+    Array<{ key: string; bucket: string; size: number; contentType?: string; signedUrl?: string }>
+  > {
+    const results: Array<{
+      key: string;
+      bucket: string;
+      size: number;
+      contentType?: string;
+      signedUrl?: string;
+    }> = [];
+    for (const file of files) {
+      const uploaded = await this.uploadMulterFile(file, { prefix: options?.prefix });
+      results.push(uploaded);
+    }
+    return results;
   }
 
   /**
