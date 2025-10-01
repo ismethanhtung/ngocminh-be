@@ -144,6 +144,36 @@
 
     <div class="row">
       <div class="card">
+        <h4>18) Lấy data viewImageFileName theo ItemNum</h4>
+        <form id="form-view-image-file-name">
+          <label>ItemNum</label>
+          <input type="text" id="viewImageFileNameItemNum" placeholder="vd: 250015134" />
+          <button type="submit">Lấy data</button>
+        </form>
+        <pre id="out-view-image-file-name"></pre>
+      </div>
+
+      <div class="card">
+        <h4>19) Lấy tất cả data viewImageFileName</h4>
+        <form id="form-all-view-image-file-name">
+          <button type="submit">Lấy tất cả data</button>
+        </form>
+        <pre id="out-all-view-image-file-name"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <h4>20) Lấy cấu trúc viewImageFileName</h4>
+        <form id="form-view-image-file-name-structure">
+          <button type="submit">Lấy cấu trúc</button>
+        </form>
+        <pre id="out-view-image-file-name-structure"></pre>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
         <h4>3) Xét nghiệm (Pathology) theo ResultId</h4>
         <form id="form-pathology">
           <label
@@ -463,6 +493,36 @@
         window.location.href = url;
         show('out-s3-redirect', { success: true, message: 'Đang redirect đến file...' });
       });
+
+      // 18) Lấy data viewImageFileName theo ItemNum
+      document.getElementById('form-view-image-file-name').addEventListener('submit', async e => {
+        e.preventDefault();
+        const itemNum = document.getElementById('viewImageFileNameItemNum').value.trim();
+        if (!itemNum) {
+          show('out-view-image-file-name', { success: false, message: 'Vui lòng nhập ItemNum' });
+          return;
+        }
+        const res = await fetch(`${apiBase}/view-image-file-name/${encodeURIComponent(itemNum)}`);
+        show('out-view-image-file-name', await res.json());
+      });
+
+      // 19) Lấy tất cả data viewImageFileName
+      document
+        .getElementById('form-all-view-image-file-name')
+        .addEventListener('submit', async e => {
+          e.preventDefault();
+          const res = await fetch(`${apiBase}/view-image-file-name`);
+          show('out-all-view-image-file-name', await res.json());
+        });
+
+      // 20) Lấy cấu trúc viewImageFileName
+      document
+        .getElementById('form-view-image-file-name-structure')
+        .addEventListener('submit', async e => {
+          e.preventDefault();
+          const res = await fetch(`${apiBase}/view-image-file-name/structure`);
+          show('out-view-image-file-name-structure', await res.json());
+        });
     </script>
   </body>
 </html>
